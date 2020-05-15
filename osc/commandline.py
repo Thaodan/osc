@@ -7250,6 +7250,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Skip initialization of build root and start with build immediately.')
     @cmdln.option('--checks', action='store_true',
                   help='Run checks even if disabled in the build config')
+    @cmdln.option('--rebuild', action='store_true',
+                  help='During build, skip the %%prep and %%clean phases; requires --rsync options')
+    @cmdln.option('--chroot-only', action='store_true',
+                  help='Only initialise build root and skip build.')
     @cmdln.option('--nochecks', '--no-checks', action='store_true',
                   help='Do not run build checks on the resulting packages.')
     @cmdln.option('--no-verify', '--noverify', action='store_true',
