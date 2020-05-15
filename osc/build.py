@@ -183,6 +183,7 @@ class Buildinfo:
                 self.urls[node.get('project')+"/"+node.get('repository')] = node.get('url') + '/%(arch)s/%(filename)s'
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
+        self.sb2install_list = [ dep.name for dep in self.deps if dep.sb2install ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
         self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
         self.noinstall_list = [ dep.name for dep in self.deps if dep.noinstall ]
@@ -220,6 +221,7 @@ class Pac:
                   'project', 'repository', 'sysroot',
                   'preinstall', 'vminstall', 'runscripts',
                   'noinstall', 'installonly', 'notmeta',
+                  'sb2install',
                  ]:
             self.mp[i] = node.get(i)
 
@@ -1325,6 +1327,7 @@ def main(apiurl, opts, argv):
 
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
+    rpmlist.append('sb2install: ' + ' '.join(bi.sb2install_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
     if build_type != 'kiwi' and build_type != 'docker' and build_type != 'podman' and build_type != 'fissile':
         if bi.noinstall_list:
