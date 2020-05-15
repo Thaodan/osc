@@ -2098,6 +2098,58 @@ class Osc(cmdln.Cmdln):
             else:
                 raise oscerr.WrongOptions('The --delete switch is only for pattern metadata or attributes.')
 
+    @cmdln.option('-b', '--with-binaries', action='store_true',
+                        help='copy the built binaries over to avoid a rebuild')
+    @cmdln.option('-x', '--with-history', action='store_true',
+                        help='replicate the history of each package.')
+    @cmdln.option('-o', '--make-older', action='store_true',
+                        help='No idea')
+    @cmdln.option('-r', '--re-sign', action='store_true',
+                        help='re-sign the binaries')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
+    def do_copyprj(self, subcmd, opts, *args):
+        """
+        Copy a project
+
+        A way to copy a project and all packages in it
+
+        It can not yet be done across buildservice instances
+
+        The user must be able to create DESTPRJ
+
+        usage:
+            osc copyprj SOURCEPRJ DESTPRJ
+        """
+
+        args = slash_split(args)
+
+        if not args or len(args) != 2:
+            raise oscerr.WrongArgs('Incorrect number of arguments.')
+
+        src_project = args[0]
+        dst_project = args[1]
+
+        src_apiurl = conf.config['apiurl']
+
+        if opts.message:
+            comment = opts.message
+        else:
+            comment = 'osc copyprj from project:%s' % ( src_project )
+
+        if src_project == dst_project:
+            raise oscerr.WrongArgs('Source and destination are the same.')
+
+        print("calling cp")
+        r = copy_prj(src_apiurl, src_project, dst_project,
+                     withbinaries = opts.with_binaries,
+                     withhistory = opts.with_history,
+                     makeolder = opts.make_older,
+                     resign = opts.re_sign,
+                     comment = comment)
+        print("done cp")
+        print(r)
+
     # TODO: rewrite and consolidate the current submitrequest/createrequest "mess"
 
     @cmdln.option('-m', '--message', metavar='TEXT',
