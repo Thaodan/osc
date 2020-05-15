@@ -2120,6 +2120,8 @@ class Osc(cmdln.Cmdln):
                         help='replicate the history of each package.')
     @cmdln.option('-o', '--make-older', action='store_true',
                         help='No idea')
+    @cmdln.option('-p', '--prjconf', action='store_true',
+                        help='copy the prjconf also')
     @cmdln.option('-r', '--re-sign', action='store_true',
                         help='re-sign the binaries')
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -2162,6 +2164,7 @@ class Osc(cmdln.Cmdln):
         r = copy_prj(src_apiurl, src_project, dst_project,
                      withbinaries = opts.with_binaries,
                      withhistory = opts.with_history,
+                     withprjconf = opts.prjconf,
                      makeolder = opts.make_older,
                      resign = opts.re_sign,
                      now = opts.now,

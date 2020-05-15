@@ -6316,8 +6316,10 @@ def copy_pac(
 def copy_prj(src_apiurl, src_project, dst_project,
              withbinaries = False,
              withhistory = False,
+             withprjconf = False,
              makeolder = False,
              resign = False,
+             now = False,
              comment = None):
     """
     Create a copy of a project.
@@ -6331,6 +6333,8 @@ def copy_prj(src_apiurl, src_project, dst_project,
         query['withbinaries'] = '1'
     if withhistory:
         query['withhistory'] = '1'
+    if withprjconf:
+        query['withprjconf'] = '1'
     if makeolder:
         query['makeolder'] = '1'
     if resign:
@@ -6339,6 +6343,7 @@ def copy_prj(src_apiurl, src_project, dst_project,
         query['comment'] = comment
     if now:
         query['nodelay'] = '1'
+
     u = makeurl(src_apiurl, ['source', dst_project], query=query)
     print("copyprj ", u, file=sys.stderr)
     f = http_POST(u)
