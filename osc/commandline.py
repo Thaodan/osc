@@ -3410,6 +3410,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         )
     @cmdln.option('-b', '--with-binaries', action='store_true',
                         help='copy the built binaries over to avoid a rebuild')
+    @cmdln.option('-n', '--now', action='store_true',
+                        help='copy synchronously (may take some time to complete)')
     @cmdln.option('-x', '--with-history', action='store_true',
                         help='replicate the history of each package.')
     @cmdln.option('-o', '--make-older', action='store_true',
@@ -3426,6 +3428,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         It can not yet be done across buildservice instances
 
         The user must be able to create DESTPRJ
+
+        Normally the copy is done asynchronously
 
         usage:
             osc copyprj SOURCEPRJ DESTPRJ
@@ -3456,6 +3460,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      withhistory = opts.with_history,
                      makeolder = opts.make_older,
                      resign = opts.re_sign,
+                     now = opts.now,
                      comment = comment)
         print("done cp")
         print(r)
