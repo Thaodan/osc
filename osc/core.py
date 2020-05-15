@@ -6037,6 +6037,34 @@ def copy_pac(
             raise oscerr.APIError('failed to copy: %s' % ', '.join(todo))
         return 'Done.'
 
+def copy_prj(src_apiurl, src_project, dst_project,
+             withbinaries = False,
+             withhistory = False,
+             makeolder = False,
+             resign = False,
+             comment = None):
+    """
+    Create a copy of a project.
+
+    Copying can only be done on the server, in a single api call.
+    """
+
+    print('Copying project...')
+    query = {'cmd': 'copy', 'oproject': src_project }
+    if withbinaries:
+        query['withbinaries'] = '1'
+    if withhistory:
+        query['withhistory'] = '1'
+    if makeolder:
+        query['makeolder'] = '1'
+    if resign:
+        query['resign'] = '1'
+    if comment:
+        query['comment'] = comment
+    u = makeurl(src_apiurl, ['source', dst_project], query=query)
+    print("copyprj ", u, file=sys.stderr)
+    f = http_POST(u)
+    return f.read()
 
 def lock(apiurl: str, project: str, package: str, msg: str = None):
     url_path = ["source", project]
