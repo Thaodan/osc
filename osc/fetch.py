@@ -271,14 +271,16 @@ class Fetcher:
                         # mark it for downloading from the API
                         self.__add_cpio(i)
                     else:
+                        # if the checksum of the downloaded package doesn't match,
+                        # delete it and mark it for downloading from the API
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
-                        if hdrmd5 != i.hdrmd5:
-                            if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
-                                print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
-                            else:
-                                print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
-                                os.unlink(i.fullfilename)
-                                self.__add_cpio(i)
+
+                        # packages with hdrmd5 == 'd0d...' come from 'download on demand' repos
+                        # and their checksum is not known to the server yet, so we skip their checksum check
+                        if hdrmd5 != i.hdrmd5 and i.hdrmd5 != 'd0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0':
+                            print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                            os.unlink(i.fullfilename)
+                            self.__add_cpio(i)
 
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')
