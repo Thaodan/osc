@@ -256,7 +256,9 @@ class Fetcher:
                         # if the checksum of the downloaded package doesn't match,
                         # delete it and mark it for downloading from the API
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
-                        if not hdrmd5 or hdrmd5 != i.hdrmd5:
+                        # packages with hdrmd5 == 'd0d...' come from 'download on demand' repos
+                        # and their checksum is not known to the server yet, so we skip their checksum check
+                        if not hdrmd5 or (hdrmd5 != i.hdrmd5 and i.hdrmd5 != 'd0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0'):
                             print('%s/%s: attempting download from api, since the hdrmd5 did not match - %s != %s'
                                 % (i.project, i.name, hdrmd5, i.hdrmd5))
                             os.unlink(i.fullfilename)
