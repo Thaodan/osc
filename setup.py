@@ -104,6 +104,9 @@ setuptools.setup(
     scripts=['osc-wrapper.py'],
     data_files=data_files,
     install_requires=['M2Crypto', 'chardet'],
+    extras_require={
+       'RPM signature verification': ['rpm'],
+    },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
