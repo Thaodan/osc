@@ -6755,6 +6755,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='get log start or end from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
                         help='strip leading build time from the log')
+    @cmdln.option('-O', '--all-packages', action='store_true',
+                  help='Show buildlog for all packages of project')
+    @cmdln.option('-S', '--status', action='store', metavar='STATUS',
+                  help='Only show build of packages with STATUS')
     def do_buildlog(self, subcmd, opts, *args):
         """
         Shows the build log of a package
@@ -6768,7 +6772,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The arguments REPOSITORY and ARCH are the first two columns in the 'osc
         results' output.
 
-        buildlog [PROJECT PACKAGE REPOSITORY [ARCH] | REPOSITORY ARCH | BUILDLOGURL]
+        buildlog PROJECT PACKAGE [REPOSITORY] [ARCH]
+        buildlog PROJECT [REPOSITORY] [ARCH]
+        buildlog PACKAGE [REPOSITORY] [ARCH]
+        buildlog [REPOSITORY ARCH | BUILDLOGURL]
         """
 
         from . import build as osc_build
@@ -6780,46 +6787,59 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import parse_buildlogurl
         from .core import print_buildlog
         from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+        from .core import is_package_dir
+        from .core import is_project_dir
 
         project = package = repository = arch = None
 
         apiurl = self.get_api_url()
+        repo_arg_offset = 0
 
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
         else:
             args = slash_split(args)
+            store = osc_store.get_store(Path.cwd())
+            wd = Path.cwd()
+            if is_project_dir(wd) or is_package_dir(wd):
+                project = store.project
             if len(args) > 2:
                 project = args[0]
                 project = self._process_project_name(project)
                 package = args[1]
-                repository = args[2]
-                if len(args) == 3:
-                    arch = osc_build.hostarch
-                elif len(args) > 4:
-                    raise oscerr.WrongArgs('Too many arguments.')
+                # repository = args[2]
+                repo_arg_offset = 2
+            if len(args) >= 1:
+                if opts.all_packages:
+                    project = args[0]
+                    project = self._process_project_name(project)
+                    repo_arg_offset = 1
                 else:
-                    arch = args[3]
+                    if not package and is_project_dir(wd):
+                        package = args[0]
+                        prj = Project(cwd)
+                        if package not in prj.pacs_avialable:
+                            raise oscerr.WrongArgs(f'Package {package} doesn\'t exist in {project}')
+                        repo_arg_offset = 1
+            if not package and is_package_dir(wd):
+                    package = store.package
+            if len(args) - repo_arg_offset == 1:
+                repository, arch = self._find_last_repo_arch(args[0], fatal=False)
+                if repository is None:
+                    # no local build with this repo was done
+                    print('failed to guess arch, using hostarch')
+                    repository = args[repo_arg_offset]
+                    arch = osc_build.hostarch
+            elif len(args) - repo_arg_offset < 2:
+                self.print_repos()
+            elif len(args) - repo_arg_offset > 2:
+                print(len(args), repo_arg_offset, project, package)
+                raise oscerr.WrongArgs('Too many arguments.')
             else:
-                store = osc_store.get_store(Path.cwd())
-                store.assert_is_package()
-                project = store.project
-                package = store.package
-                if len(args) == 2:
-                    repository = args[0]
-                    arch = args[1]
-                elif len(args) == 1:
-                    repository, arch = self._find_last_repo_arch(args[0], fatal=False)
-                    if repository is None:
-                        # no local build with this repo was done
-                        print('failed to guess arch, using hostarch')
-                        repository = args[0]
-                        arch = osc_build.hostarch
-                    elif len(args) < 2:
-                        self.print_repos()
-                    else:
-                        repository = args[0]
-                        arch = args[1]
+                repository = args[0 + repo_arg_offset]
+                arch = args[1 + repo_arg_offset]
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
@@ -6844,7 +6864,39 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
+
+        if opts.all_packages:
+            self.print_buildl_prj_pkgs(apiurl, project,
+                                 repository, arch, offset,
+                                 strip_time, opts.last, opts.lastsucceeded, opts.status)
+        else:
+            print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
+
+    def print_buildl_prj_pkgs(self,
+            apiurl: str,
+            prj: str,
+            repository: str,
+            arch: str,
+            offset=0,
+            strip_time=False,
+            last=False,
+            lastsucceeded=False,
+            status='succeeded'
+    ):
+        r = []
+        pkgs = []
+        for results in get_package_results(apiurl, prj,
+                                           None,
+                                           repository,
+                                           arch):
+            for res, is_multi in result_xml_to_dicts(results):
+                if res['code'] == status:
+                    pkgs.append(res['package'])
+        for pkg in pkgs:
+            with open(f'{prj}:{pkg}.log', 'w+b') as pkg_log_file:
+                print_buildlog(apiurl, prj, pkg,
+                               repository, arch,
+                               offset, strip_time, None, None, pkg_log_file)
 
     def print_repos(
         self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg="Missing arguments", project=None
