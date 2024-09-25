@@ -22,3 +22,7 @@ class Flag(XmlModel):
     repository: Optional[str] = Field(
         xml_attribute=True,
     )
+
+    package: Optional[str] = Field(
+        xml_attribute=True,
+    )
